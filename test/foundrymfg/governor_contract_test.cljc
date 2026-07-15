@@ -110,6 +110,48 @@
       (is (some #{:shipment-weight-exceeded} (-> (store/ledger db) last :basis)))
       (is (empty? (store/shipment-history db))))))
 
+(deftest tensile-test-out-of-tolerance-is-held
+  (testing "ADR-2607999800: a batch whose own recorded :coupon-mass-kg yields a REAL physics-2d-simulated peak tensile load below the disclosed floor -> HOLD, wired into the SAME :coordinate-shipment proposal-gating function every other HARD check runs through"
+    (let [[db actor] (fresh)
+          _ (store/commit-record! db {:effect :batch/upsert :path ["batch-001"]
+                                      :value {:coupon-mass-kg 1.0}})
+          res (exec-op actor "t15"
+                    {:op :coordinate-shipment :effect :propose :subject "ship-4"
+                     :value {:batch-id "batch-001" :weight-kg 5000.0
+                             :destination "buyer-yard-north"}}
+                    coordinator)]
+      (is (= :hold (get-in res [:state :disposition])))
+      (is (not= :interrupted (:status res)))
+      (is (some #{:tensile-test-out-of-tolerance} (-> (store/ledger db) last :basis)))
+      (is (empty? (store/shipment-history db))))))
+
+(deftest tensile-test-in-tolerance-does-not-block-shipment
+  (testing "a batch whose own recorded :coupon-mass-kg clears the real disclosed floor is unaffected by this check -- still escalates for human approval like any clean shipment coordination, proving this ADR is purely additive"
+    (let [[db actor] (fresh)
+          _ (store/commit-record! db {:effect :batch/upsert :path ["batch-001"]
+                                      :value {:coupon-mass-kg 5.0}})
+          res (exec-op actor "t16"
+                    {:op :coordinate-shipment :effect :propose :subject "ship-5"
+                     :value {:batch-id "batch-001" :weight-kg 5000.0
+                             :destination "buyer-yard-north"}}
+                    coordinator)]
+      (is (= :interrupted (:status res)) "pauses for human approval even when governor-clean")
+      (let [r2 (approve! actor "t16")]
+        (is (= :commit (get-in r2 [:state :disposition])))
+        (is (= 1 (count (store/shipment-history db))))))))
+
+(deftest missing-coupon-mass-never-blocks-shipment
+  (testing "a batch with no :coupon-mass-kg on file (no tensile-test coupon poured/tested yet) never trips the new check -- missing telemetry != violation, still escalates normally like any clean shipment"
+    (let [[db actor] (fresh)
+          res (exec-op actor "t17"
+                    {:op :coordinate-shipment :effect :propose :subject "ship-6"
+                     :value {:batch-id "batch-002" :weight-kg 100.0
+                             :destination "buyer-yard-east"}}
+                    coordinator)]
+      (is (= :interrupted (:status res)) "not HARD-held by the new check")
+      (is (nil? (:coupon-mass-kg (store/batch db "batch-002")))
+          "batch-002's seeded sample data never carried this field"))))
+
 (deftest furnace-actuate-is-held-and-permanently-blocked
   (testing "a proposal that sets :actuate-furnace? true -> HOLD, PERMANENT, never reaches request-approval even though the equipment is verified and registered"
     (let [[db actor] (fresh)
