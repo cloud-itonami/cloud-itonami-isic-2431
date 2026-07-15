@@ -11,7 +11,34 @@
  :deps {io.github.kotoba-lang/langgraph
         {:local/root "../../kotoba-lang/langgraph"}
         io.github.kotoba-lang/langchain
-        {:local/root "../../kotoba-lang/langchain"}}
+        {:local/root "../../kotoba-lang/langchain"}
+        io.github.kotoba-lang/robotics
+        {:local/root "../../kotoba-lang/robotics"}
+        ;; REAL engineering-simulation dependency (ADR-2607999800,
+        ;; extending ADR-2607142800's/ADR-2607152000's/ADR-2607999600's
+        ;; fleet-wide robotics-process-simulation pattern to this
+        ;; vertical -- see `autoparts.robotics`/`deviceassembly.
+        ;; robotics`/`steelworks.robotics` for the prior instances of
+        ;; this same dependency): foundrymfg.robotics now actually
+        ;; calls physics-2d/world-step -- a real, tested time-stepped
+        ;; rigid-body impulse solver -- to run a real keel-block/
+        ;; Y-block test-coupon tensile-test simulation (ASTM A536/
+        ;; A216-style separately-cast-test-coupon practice), ADDITIONAL
+        ;; to (never replacing) the existing self-reported alloy-grade/
+        ;; defect-rate intake-patch checks. This vertical has no
+        ;; design-library sibling repo, so the physics module is built
+        ;; directly in foundrymfg.robotics and the ONLY new
+        ;; dependencies are kotoba-lang/robotics (the shared mission/
+        ;; action/telemetry-proof contract every cloud-itonami
+        ;; vertical's robotics ns uses) and physics-2d itself, taken as
+        ;; a real pinned git-coordinate dep (not :local/root) so this
+        ;; repo stays forkable standalone outside the monorepo -- the
+        ;; same reasoning `autoparts.robotics`/`deviceassembly.
+        ;; robotics`/`steelworks.robotics` already established, using
+        ;; the SAME fleet-standard SHA pin those repos currently use.
+        io.github.kotoba-lang/physics-2d
+        {:git/url "https://github.com/kotoba-lang/physics-2d.git"
+         :sha "03b6c23c8d9aa36b92a8130fd3e37fc2548b4d26"}}
  :aliases
  {;; offline workspace dev -- pin transitive langchain to local checkout
   ;; (kept for parity with sibling actors' deps.edn shape; redundant
