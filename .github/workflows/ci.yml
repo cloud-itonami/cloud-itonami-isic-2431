@@ -5,7 +5,9 @@ name: CI
 # PUBLIC) into the expected relative paths -- no token needed. Same
 # pattern as cloud-itonami-isic-0111 / cloud-itonami-isic-869.
 # physics-2d is pinned via :git/sha (not :local/root), so it resolves
-# straight from GitHub -- no sibling checkout needed for it.
+# straight from GitHub -- no sibling checkout needed for it. robotics
+# itself declares :local/root deps on html/css, so those need siblings
+# too even though this repo's own code never touches them directly.
 
 on:
   push:
@@ -42,6 +44,14 @@ jobs:
         with:
           repository: kotoba-lang/robotics
           path: orgs/kotoba-lang/robotics
+      - uses: actions/checkout@v4
+        with:
+          repository: kotoba-lang/html
+          path: orgs/kotoba-lang/html
+      - uses: actions/checkout@v4
+        with:
+          repository: kotoba-lang/css
+          path: orgs/kotoba-lang/css
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }
       - uses: DeLaGuardo/setup-clojure@13.4
