@@ -48,6 +48,11 @@
          {:local/root "../../kotoba-lang/langchain"}}}
   ;; clojure -M:dev:run  -> drive the demo through one OperationActor
   :run {:main-opts ["-m" "foundrymfg.sim"]}
+  ;; clojure -M:dev:render-html  -> drive the REAL actor at build time and
+  ;; project the SSoT + append-only audit ledger it writes into
+  ;; docs/samples/operator-console.html (a generated artifact -- regenerate,
+  ;; never hand-edit). Deterministic: re-running is byte-identical.
+  :render-html {:main-opts ["-m" "foundrymfg.render-html"]}
   :test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner
                       {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
