@@ -51,7 +51,7 @@
   leaks. Re-running produces byte-identical output.
 
     clojure -M:dev:render-html [out-file]   ; default docs/samples/operator-console.html"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [langgraph.graph :as g]
             [foundrymfg.governor :as governor]
             [foundrymfg.operation :as op]
