@@ -50,7 +50,7 @@
   Deterministic: no clock, no randomness, no map-iteration order
   leaks. Re-running produces byte-identical output.
 
-    clojure -M:dev:render-html [out-file]   ; default docs/samples/operator-console.html"
+    kbb -M:dev:render-html [out-file]   ; default docs/samples/operator-console.html"
   (:require [kotoba.lang.text :as str]
             [langgraph.graph :as g]
             [foundrymfg.governor :as governor]
@@ -623,7 +623,7 @@
      "<hr class=\"dads-divider\" data-color=\"solid-gray-420\" data-style=\"solid\" data-width=\"1\">"
      "<p>"
      (esc "再生成: ")
-     "<code>clojure -M:dev:render-html</code>"
+     "<code>kbb -M:dev:render-html</code>"
      (esc (str " — 出力は決定的（時刻・乱数・マップ順序に依存しない）。台帳に現れる fact 種別は "
                ":committed / :governor-hold / :approval-rejected の 3 つだけで、"
                ":approval-granted と :approval-requested は foundrymfg.operation の "
