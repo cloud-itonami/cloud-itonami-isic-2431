@@ -1,0 +1,46 @@
+(ns foundrymfg.physics-probe-test
+  "The probe is the bot's only source of \"measured\"; these pin that it
+  measures (every run numeric, count = expected), that the numbers come
+  from the simulation (the derived boundary really straddles the floor),
+  and that a changed solver would show."
+  (:require [clojure.test :refer [deftest is testing]]
+            [foundrymfg.physics-probe :as probe]
+            [foundrymfg.robotics :as robotics]))
+
+(deftest probe-measures-every-run
+  (let [p (probe/probe)]
+    (is (= "itonami.physical-ai.probe.v1" (:physics-probe/schema p)))
+    (is (pos? (:count p)))
+    (is (= (:count p) (:expected p) (count (:runs p))))
+    (testing "every run carries a numeric load and tick count from the trajectory"
+      (doseq [r (:runs p)]
+        (is (number? (get-in r [:quantities :sim-tensile-load-n])))
+        (is (pos? (get-in r [:quantities :ticks])))))))
+
+(deftest load-rises-with-mass-at-the-default-rate
+  (let [loads (->> (:runs (probe/probe))
+                   (remove #(get-in % [:input :test-speed-mps]))
+                   (map #(get-in % [:quantities :sim-tensile-load-n])))]
+    (is (= 5 (count loads)))
+    (is (apply < loads))))
+
+(deftest load-rises-with-pull-rate-at-fixed-mass
+  (let [by-speed (->> (:runs (probe/probe))
+                      (filter #(= 5.0 (double (get-in % [:input :coupon-mass-kg]))))
+                      (map (juxt #(get-in % [:quantities :test-speed-mps])
+                                 #(get-in % [:quantities :sim-tensile-load-n])))
+                      (sort-by first)
+                      (map second))]
+    (is (= 3 (count by-speed)))
+    (is (apply < by-speed))))
+
+(deftest derived-boundary-straddles-the-floor
+  (let [m (probe/min-passing-coupon-mass-kg)
+        load (fn [kg] (:sim-tensile-load-n (robotics/tensile-test-telemetry-for {:coupon-mass-kg kg})))]
+    (is (number? m))
+    (testing "at the boundary the load reaches the floor; 1% lighter it does not"
+      (is (>= (load m) robotics/min-tensile-load-n))
+      (is (< (load (* 0.99 m)) robotics/min-tensile-load-n)))))
+
+(deftest bracket-that-does-not-straddle-answers-nil
+  (is (nil? (probe/min-passing-coupon-mass-kg 10.0 20.0 10))))
