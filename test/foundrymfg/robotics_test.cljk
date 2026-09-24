@@ -11,7 +11,7 @@
   `foundrymfg.registry/alloy-grade-valid?`/`defect-rate-valid?` (the
   pre-existing self-reported checks) are untouched, and a batch with
   no `:coupon-mass-kg` on file never trips the new check."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [foundrymfg.robotics :as robotics]))
 
 (defn- abs* [x] (if (neg? x) (- x) x))

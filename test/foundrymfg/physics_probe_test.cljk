@@ -3,7 +3,7 @@
   measures (every run numeric, count = expected), that the numbers come
   from the simulation (the derived boundary really straddles the floor),
   and that a changed solver would show."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [foundrymfg.physics-probe :as probe]
             [foundrymfg.robotics :as robotics]))
 
