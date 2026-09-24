@@ -51,7 +51,7 @@
   leaks. Re-running produces byte-identical output.
 
     kbb -M:dev:render-html [out-file]   ; default docs/samples/operator-console.html"
-  (:require [kotoba.lang.text :as str]
+  (:require [kotoba.io :as kio] [kotoba.lang.text :as str]
             [langgraph.graph :as g]
             [foundrymfg.governor :as governor]
             [foundrymfg.operation :as op]
@@ -546,8 +546,8 @@
   scripts/vendor.cljs). Returns nil in a standalone fork where that
   file is absent -- the caller falls back to a minimal stylesheet."
   [path]
-  (let [f (java.io.File. ^String path)]
-    (when (.isFile f)
+  (let [f (kio/file ^String path)]
+    (when (kio/file? f)
       (let [s (slurp f :encoding "UTF-8")
             i (str/index-of s "<style>")
             j (str/index-of s "</style>")]
@@ -639,8 +639,8 @@
   (let [out    (or (first args) "docs/samples/operator-console.html")
         result (run-demo!)
         html   (render result)
-        f      (java.io.File. ^String out)]
-    (when-let [p (.getParentFile f)] (.mkdirs p))
+        f      (kio/file ^String out)]
+    (when-let [p (kio/parent-file f)] (kio/mkdirs p))
     (spit f html :encoding "UTF-8")
     (let [ledger (store/ledger (:db result))]
       (println (str "wrote " out
