@@ -1,0 +1,46 @@
+{
+  "jobs": [
+    {
+      "base_url": null,
+      "context_from": null,
+      "deliver": "local",
+      "enabled": true,
+      "enabled_toolsets": null,
+      "model": null,
+      "name": "physai-isic-2431-measure",
+      "no_agent": true,
+      "prompt": "",
+      "provider": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 3-23/6 * * *",
+        "display": "25 3-23/6 * * *"
+      },
+      "script": "physai_measure.py",
+      "skill": null,
+      "skills": [],
+      "workdir": null
+    },
+    {
+      "base_url": null,
+      "context_from": null,
+      "deliver": "local",
+      "enabled": true,
+      "enabled_toolsets": null,
+      "model": "mishima",
+      "name": "physai-isic-2431-grow",
+      "no_agent": false,
+      "prompt": "physai-isic-2431 — physical-AI bot の成長 tick（1 反復 = 1 増分）。\n\n1. ~/.hermes/profiles/physai-isic-2431/SOUL.md を読む。対象 repo は cloud-itonami/cloud-itonami-isic-2431。\n2. この prompt の上に注入された evidence（tick.cljk evidence の出力: STATUS / TESTS / PROBE / RUN / DELTA）を読む。\n3. SOUL.md の「1 反復の手順」に従って候補を 1 つだけ選び、`tick.cljk branch` で worktree を切り、そこで編集・`kbb -M:dev:test`・`kbb -M:dev:physics`・commit する。\n4. `kbb --backend sci ~/github/com-junkawasaki/scripts/physical-ai-bots/tick.cljk land physai-isic-2431 <branch>` で着地させる。REFUSE が出たら直すか、理由を報告して終える。main への push・force-push・merge API の直接呼び出しはしない。\n5. 報告: 選んだ候補 / 変えたこと / test 数の前後 / probe の主要量の前後 / land の結果（LANDED か REFUSE 理由）。STATUS が UNMEASURED で直せない（依存・環境）なら何もせず、その理由だけを報告する。",
+      "provider": "murakumo",
+      "schedule": {
+        "kind": "cron",
+        "expr": "16 9 * * *",
+        "display": "16 9 * * *"
+      },
+      "script": "physai_evidence.py",
+      "skill": null,
+      "skills": [],
+      "workdir": null
+    }
+  ]
+}

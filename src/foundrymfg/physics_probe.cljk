@@ -1,0 +1,81 @@
+(ns foundrymfg.physics-probe
+  "The physical-AI bot's measurement: run this actor's REAL `physics-2d`
+  keel-block / Y-block test-coupon tensile-test simulation
+  (`foundrymfg.robotics/run-tensile-test`) over a fixed sweep and print
+  ONE EDN map of the physical quantities it computed.
+
+    kbb -M:dev:physics
+
+  This is what the resident bot (hermes/profiles/physai-isic-2431/SOUL.md)
+  reads every tick. Every number is derived from a time-stepped
+  trajectory, never typed in. Output schema `itonami.physical-ai.probe.v1`
+  (see cloud-itonami-isic-2013's probe for the shared contract).
+
+  `:count` is an evidence floor: the bot treats 0 as \"could not
+  measure\", never as \"nothing out of tolerance\". Exit 0 when every run
+  produced numbers, 2 when any run did not."
+  (:require [foundrymfg.robotics :as robotics]))
+
+(def schema "itonami.physical-ai.probe.v1")
+
+(def sweep
+  "Tensile-test configurations swept each tick. Coupon masses 1.0 / 2.0 /
+  5.0 kg are the fixtures the robotics and governor tests pin (2.0 kg is
+  also the render-html demo batch); 3.0 and 8.0 kg bracket them. The last
+  two runs vary only the pull rate (1.0 and 4.0 m/s vs the 2.0 m/s
+  default) at 5.0 kg so a change in the rate coupling shows up."
+  [{:coupon-mass-kg 1.0}
+   {:coupon-mass-kg 2.0}
+   {:coupon-mass-kg 3.0}
+   {:coupon-mass-kg 5.0}
+   {:coupon-mass-kg 8.0}
+   {:coupon-mass-kg 5.0 :test-speed-mps 1.0}
+   {:coupon-mass-kg 5.0 :test-speed-mps 4.0}])
+
+(defn- run-one [{:keys [coupon-mass-kg] :as input}]
+  (let [t (select-keys (robotics/run-tensile-test coupon-mass-kg (dissoc input :coupon-mass-kg))
+                       [:sim-tensile-load-n :sim-peak-decel-mps2 :ticks :dt
+                        :test-speed-mps :travel-to-peak-load-m])]
+    {:input input
+     :quantities t
+     :out-of-tolerance? (boolean (robotics/tensile-test-out-of-tolerance? t))}))
+
+(defn- load-at [mass-kg]
+  (:sim-tensile-load-n (robotics/tensile-test-telemetry-for {:coupon-mass-kg mass-kg})))
+
+(defn min-passing-coupon-mass-kg
+  "Smallest effective coupon mass whose simulated peak tensile load
+  reaches `robotics/min-tensile-load-n`, by bisection over the REAL
+  simulation (load is monotone in mass at fixed speed/travel -- pinned
+  by `robotics-test`). nil when the bracket does not straddle."
+  ([] (min-passing-coupon-mass-kg 0.001 20.0 40))
+  ([lo hi iters]
+   (let [floor robotics/min-tensile-load-n]
+     (when (and (< (load-at lo) floor) (>= (load-at hi) floor))
+       (loop [lo lo hi hi i 0]
+         (if (>= i iters)
+           hi
+           (let [mid (/ (+ lo hi) 2.0)]
+             (if (>= (load-at mid) floor)
+               (recur lo mid (inc i))
+               (recur mid hi (inc i))))))))))
+
+(defn probe []
+  (let [runs (mapv run-one sweep)
+        numeric? (fn [r] (number? (get-in r [:quantities :sim-tensile-load-n])))]
+    {:physics-probe/schema schema
+     :repo "cloud-itonami/cloud-itonami-isic-2431"
+     :procedure "ASTM A536 / A216 / ISO 1083 keel-block / Y-block separately-cast test-coupon tensile test (robot tensile-test cell)"
+     :solver "physics-2d/world-step"
+     :runs runs
+     :derived {:min-tensile-load-n robotics/min-tensile-load-n
+               :min-passing-coupon-mass-kg (min-passing-coupon-mass-kg)}
+     :count (count (filter numeric? runs))
+     :expected (count sweep)}))
+
+(defn -main [& _]
+  (let [p (probe)]
+    (prn p)
+    (when-not (= (:count p) (:expected p))
+      #?(:cljs (set! (.-exitCode js/process) 2)
+         :default (System/exit 2)))))

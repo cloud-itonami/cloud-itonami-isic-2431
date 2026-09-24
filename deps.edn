@@ -43,7 +43,7 @@
         ;; the SAME fleet-standard SHA pin those repos currently use.
         io.github.kotoba-lang/physics-2d
         {:git/url "https://github.com/kotoba-lang/physics-2d.git"
-         :sha "03b6c23c8d9aa36b92a8130fd3e37fc2548b4d26"}}
+         :git/sha "03b6c23c8d9aa36b92a8130fd3e37fc2548b4d26"}}
  :aliases
  {;; offline workspace dev -- pin transitive langchain to local checkout
   ;; (kept for parity with sibling actors' deps.edn shape; redundant
@@ -53,6 +53,9 @@
          {:local/root "../../kotoba-lang/langchain"}}}
   ;; kbb -M:dev:run  -> drive the demo through one OperationActor
   :run {:main-opts ["-m" "foundrymfg.sim"]}
+  ;; kbb -M:dev:physics -> the physical-AI bot's measurement (hermes/profiles/physai-isic-2431/SOUL.md):
+  ;; one EDN map of the quantities the REAL physics-2d simulation computed. Exit 2 = could not measure.
+  :physics {:main-opts ["-m" "foundrymfg.physics-probe"]}
   ;; kbb -M:dev:render-html  -> drive the REAL actor at build time and
   ;; project the SSoT + append-only audit ledger it writes into
   ;; docs/samples/operator-console.html (a generated artifact -- regenerate,
