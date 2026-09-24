@@ -4,7 +4,7 @@ model:
   default: mishima
   base_url: https://api.murakumo.cloud/v1
   context_length: 131072
-  max_tokens: 2048
+  max_tokens: 8192
 providers:
   murakumo:
     base_url: https://api.murakumo.cloud/v1
